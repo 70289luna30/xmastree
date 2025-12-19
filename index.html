@@ -131,8 +131,8 @@
     <div style="color:#fff; text-align:center; margin-top:10px; font-size:13px;">給你一個不無聊的聖誕驚喜 ✨</div>
   </div>
 
-  <audio id="bgm" src="./xmas_song.mp3" loop preload="auto"></audio>
-
+<audio id="bgm" src="./xmas_song.mp3" loop muted playsinline preload="auto"></audio>
+  
   <div id="ui-toggle">⚙️</div>
   <div id="ui-panel">
     <h2 style="font-size:16px; margin:0;">✨ 控制台</h2>
@@ -325,16 +325,38 @@
     toggle.onclick = () => { panel.classList.toggle('show'); closeBtn.style.display = panel.classList.contains('show') ? 'block' : 'none'; };
     closeBtn.onclick = () => { panel.classList.remove('show'); closeBtn.style.display = 'none'; };
 
-    document.getElementById('start-btn').onclick = () => {
-      document.getElementById('status').style.display='none';
-      const bgm = document.getElementById('bgm'); bgm.play().catch(()=>{});
-      const cam = new Camera(document.getElementById('video-preview'), {
-        onFrame: async () => { await hands.send({image: document.getElementById('video-preview')}); },
-        width: 320, height: 240
-      });
-      cam.start();
-      animate();
-    };
+  document.getElementById('start-btn').onclick = () => {
+  const bgm = document.getElementById('bgm');
+  
+  // ✅ 核心技巧 1：在互動第一時間強制「解除靜音」並載入
+  bgm.muted = false; 
+  bgm.load(); 
+
+  // ✅ 核心技巧 2：使用 Promise 處理播放請求
+  const playPromise = bgm.play();
+
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
+      console.log("BGM 播放成功");
+    }).catch(error => {
+      console.log("BGM 播放被攔截:", error);
+      // 備案：如果失敗，監聽下一次螢幕觸碰來播放
+      document.body.addEventListener('touchstart', () => {
+          bgm.play();
+      }, { once: true });
+    });
+  }
+
+  // 以下維持你原本的邏輯
+  document.getElementById('status').style.display = 'none';
+  
+  const cam = new Camera(document.getElementById('video-preview'), {
+    onFrame: async () => { await hands.send({image: document.getElementById('video-preview')}); },
+    width: 320, height: 240
+  });
+  cam.start();
+  animate();
+};
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
