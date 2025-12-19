@@ -3,218 +3,151 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>叁學院｜AI 聖誕樹互動（RWD 優化版）</title>
+  <title>叁學院｜AI 聖誕樹互動（視覺還原 RWD 版）</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', -apple-system, sans-serif; }
+    body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
     #canvas-container { position: fixed; inset: 0; z-index: 1; }
 
-    /* 初始狀態層 */
-    #status {
-      position: fixed; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      color: #fff; z-index: 100;
-      background: rgba(0,0,0,0.85);
-      text-align: center;
-      padding: 24px;
-      backdrop-filter: blur(10px);
-    }
-    #status h1 { margin: 0 0 12px 0; font-size: 24px; color: #22ff88; }
-    #status p { margin: 0; color: rgba(255,255,255,0.75); font-size: 14px; line-height: 1.8; }
-    #start-btn {
-      margin-top: 24px; padding: 14px 32px; border-radius: 999px;
-      border: 0; cursor: pointer; font-weight: 800; font-size: 16px;
-      background: #22ff88; color: #00150a;
-      box-shadow: 0 0 25px rgba(34,255,136,.4);
-    }
-
-    /* 攝影機預覽 - 手機版縮小並移至右上或角落 */
+    /* 攝影機預覽 - RWD 調整 */
     #video-preview {
-      position: fixed; left: 12px; bottom: 12px;
-      width: 120px; height: 90px;
-      border-radius: 10px;
+      position: fixed; left: 16px; bottom: 16px;
+      width: clamp(100px, 25vw, 160px); height: auto;
+      aspect-ratio: 4/3;
+      border-radius: 14px;
       transform: scaleX(-1);
-      border: 1.5px solid rgba(255,255,255,0.3);
-      z-index: 5;
+      border: 2px solid rgba(255,255,255,0.18);
+      z-index: 10;
       object-fit: cover;
       background: #000;
-      opacity: 0.7;
+      opacity: 0.55;
     }
 
-    /* 巨大標題：RWD 優化 */
+    /* 巨大標題 - RWD 優化 */
     #big-title {
       position: fixed;
-      top: 5vh;
-      left: 50%;
+      top: 2vh; left: 50%;
       transform: translateX(-50%);
-      z-index: 10;
+      z-index: 13;
       pointer-events: none;
       white-space: nowrap;
       font-family: "Corinthia", cursive;
       font-weight: 700;
       color: #ffffff;
-      font-size: clamp(48px, 15vw, 120px); /* 縮小手機端尺寸 */
-      text-shadow: 0 0 15px rgba(255, 60, 60, 0.8), 0 0 10px rgba(255, 215, 0, 0.6);
+      font-size: clamp(60px, 15vw, 140px);
+      line-height: 1;
+      text-shadow: 0 0 10px rgba(255, 60, 60, 0.9), 0 0 10px rgba(255, 215, 0, 0.85);
     }
 
     #text-layer {
       position: fixed;
-      top: clamp(15vh, 20vw, 180px);
+      top: clamp(100px, 20vh, 140px);
       left: 50%;
       transform: translateX(-50%);
-      z-index: 9;
+      z-index: 12;
       width: 90vw;
       text-align: center;
       pointer-events: none;
+      color: rgba(255,255,255,0.92);
     }
-    #text-layer .subline { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
-    #text-layer .cta { font-size: 12px; color: #22ff88; font-weight: bold; }
 
-    /* 互動驚喜卡片 */
-    #reveal-card {
-      position: fixed;
-      left: 50%; top: 50%;
-      transform: translate(-50%, -40%) scale(0.8);
-      width: min(85vw, 340px);
-      background: rgba(15,15,25,0.85);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 20px;
-      padding: 12px;
-      z-index: 50;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      backdrop-filter: blur(15px);
-    }
-    #reveal-card.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
-    #reveal-card img { width: 100%; border-radius: 14px; }
-    #reveal-card .reveal-text { margin-top: 10px; font-size: 13px; color: #fff; text-align: center; }
-
-    /* ✅ 收合式 UI Panel */
+    /* 收合式 UI 控制面板 */
     #ui-panel {
-      position: fixed; top: 12px; right: 12px;
-      width: 260px; 
-      background: rgba(20,20,35,0.9);
-      backdrop-filter: blur(12px);
+      position: fixed; top: 16px; right: 16px;
+      width: 280px; padding: 16px;
+      background: rgba(20,20,35,0.85);
+      backdrop-filter: blur(10px);
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #fff; z-index: 60;
-      transition: transform 0.3s ease;
-      max-height: 85vh;
-      overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff; z-index: 100;
+      transition: transform 0.3s ease, opacity 0.3s ease;
     }
-    /* 手機版預設收起 */
+
+    /* 手機端預設收起 */
     @media (max-width: 600px) {
-      #ui-panel { transform: translateX(calc(100% + 20px)); width: 240px; }
-      #ui-panel.open { transform: translateX(0); }
+      #ui-panel { transform: translateX(120%); opacity: 0; }
+      #ui-panel.show { transform: translateX(0); opacity: 1; }
     }
 
+    /* 齒輪/控制按鈕 */
     #ui-toggle {
-      position: fixed; top: 12px; right: 12px;
+      position: fixed; top: 16px; right: 16px;
       width: 44px; height: 44px;
-      background: #22ff88; color: #000;
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 61; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      background: rgba(34,255,136,0.9);
+      border-radius: 12px; display: none; /* 僅手機顯示 */
+      align-items: center; justify-content: center;
+      z-index: 101; cursor: pointer; font-size: 20px;
     }
+    @media (max-width: 600px) { #ui-toggle { display: flex; } }
 
-    .panel-content { padding: 16px; }
-    .panel-content h2 { margin: 0 0 12px 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-    .help { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+    /* 原有樣式保持 */
+    .color-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .cbtn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-top: 10px; }
+    .switch { width: 44px; height: 24px; background: rgba(255,255,255,0.14); border-radius: 999px; position: relative; cursor: pointer; }
+    .knob { width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: 0.2s; }
+    .switch.on .knob { left: 23px; background: #22ff88; }
 
-    .color-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .cbtn {
-      width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;
+    #reveal-card {
+      position: fixed; left: 50%; top: 55%; transform: translate(-50%, -50%) scale(0.9);
+      width: min(85vw, 380px); background: rgba(10,10,18,0.72);
+      border-radius: 18px; padding: 12px; z-index: 20; opacity: 0;
+      transition: 0.3s ease; backdrop-filter: blur(10px); pointer-events: none;
     }
+    #reveal-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #reveal-card img { width: 100%; border-radius: 14px; }
 
-    .toggle-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
-    .toggle-row label { font-size: 12px; }
-
-    .switch {
-      width: 40px; height: 20px; background: rgba(255,255,255,0.2);
-      border-radius: 20px; position: relative; cursor: pointer;
+    #status {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; color: #fff; z-index: 200;
+      background: rgba(0,0,0,0.8); text-align: center; padding: 20px;
     }
-    .knob {
-      width: 14px; height: 14px; background: #fff; border-radius: 50%;
-      position: absolute; top: 3px; left: 3px; transition: 0.2s;
-    }
-    .switch.on { background: #22ff88; }
-    .switch.on .knob { left: 23px; }
-
-    #audio-btn {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; font-size: 12px;
-    }
-
-    .sparkle {
-      position: fixed; width: 30px; height: 30px;
-      background: radial-gradient(circle, #fff 10%, #ffd700 40%, transparent 70%);
-      border-radius: 50%; pointer-events: none; z-index: 99;
-      animation: flash 0.5s ease-out forwards;
-    }
-    @keyframes flash { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
-
-    /* 手機專用關閉按鈕 */
-    #close-panel {
-      display: none; text-align: center; padding: 10px; color: #22ff88; font-size: 12px; font-weight: bold;
-    }
-    @media (max-width: 600px) { #close-panel { display: block; border-top: 1px solid rgba(255,255,255,0.1); } }
+    #start-btn { margin-top: 18px; padding: 12px 24px; border-radius: 999px; border: 0; background: #22ff88; font-weight: 800; cursor: pointer; }
+    
+    .sparkle { position: fixed; width: 40px; height: 40px; background: radial-gradient(circle, #fff, #ffd700, transparent); border-radius: 50%; pointer-events: none; z-index: 999; animation: flash 0.5s forwards; mix-blend-mode: screen; }
+    @keyframes flash { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
   </style>
 </head>
 <body>
 
   <div id="status">
-    <h1>🎄 叁學院 AI 聖誕驚喜</h1>
-    <p>
-      請允許攝影機權限以進行互動：<br/><br/>
-      🖐 <b>張開手掌</b>：解鎖驚喜<br/>
-      👋 <b>左右揮動</b>：移動樹木<br/>
-      👌 <b>食指捏合</b>：釋放魔法
-    </p>
-    <button id="start-btn">進入聖誕世界</button>
+    <h1>🎄 AI 聖誕樹互動</h1>
+    <p>👋 揮手移動 | 🖐 張開解鎖 | 👌 捏合魔法</p>
+    <button id="start-btn">✨ 開始體驗</button>
   </div>
 
   <video id="video-preview" playsinline></video>
-
   <div id="big-title">Merry Christmas</div>
-
   <div id="text-layer">
-    <div class="subline">手掌「大張開」解鎖隱藏禮物</div>
-    <div class="cta">叁學院｜AI x 職涯探索</div>
+    <div class="subline">手掌張開 ➜ 解鎖驚喜</div>
   </div>
 
   <div id="reveal-card">
-    <img id="reveal-img" src="https://images.unsplash.com/photo-1543589077-47d81606c1bf?q=80&w=800&auto=format&fit=crop" alt="Surprise" />
-    <div class="reveal-text">✨ 恭喜解鎖聖誕驚喜 ✨<br/>願 AI 帶給你無限可能！</div>
+    <img src="./xmas.jpg" alt="Surprise" />
+    <div style="color:#fff; text-align:center; margin-top:10px; font-size:13px;">給你一個不無聊的聖誕驚喜 ✨</div>
   </div>
 
-  <audio id="bgm" src="https://www.chosic.com/wp-content/uploads/2021/11/Jingle-Bells-3.mp3" loop preload="auto"></audio>
+  <audio id="bgm" src="./xmas_song.mp3" loop preload="auto"></audio>
 
   <div id="ui-toggle">⚙️</div>
-
   <div id="ui-panel">
-    <div class="panel-content">
-      <h2>✨ 控制台</h2>
-      <div class="help">更換聖誕樹色調：</div>
-      <div class="color-row">
-        <div class="cbtn" style="background:#22ff88" data-c="#22ff88"></div>
-        <div class="cbtn" style="background:#ff4d4d" data-c="#ff4d4d"></div>
-        <div class="cbtn" style="background:#ffd700" data-c="#ffd700"></div>
-        <div class="cbtn" style="background:#ffffff" data-c="#ffffff"></div>
-        <div class="cbtn" style="background:#6dd5ff" data-c="#6dd5ff"></div>
-      </div>
-
-      <div class="toggle-row">
-        <label>漸層模式</label>
-        <div id="gradSwitch" class="switch on"><div class="knob"></div></div>
-      </div>
-
-      <button id="audio-btn">🔊 音樂播放中</button>
+    <h2 style="font-size:16px; margin:0;">✨ 控制台</h2>
+    <div class="color-row">
+      <div class="cbtn" style="background:#22ff88" data-c="#22ff88"></div>
+      <div class="cbtn" style="background:#ff4d4d" data-c="#ff4d4d"></div>
+      <div class="cbtn" style="background:#ffd700" data-c="#ffd700"></div>
+      <div class="cbtn" style="background:#ffffff" data-c="#ffffff"></div>
     </div>
-    <div id="close-panel">確認並返回</div>
+    <div class="toggle-row">
+      <label style="font-size:12px;">漸層模式</label>
+      <div id="gradSwitch" class="switch on"><div class="knob"></div></div>
+    </div>
+    <button id="audio-btn" style="width:100%; margin-top:10px; background:rgba(255,255,255,0.1); color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer;">🔊 音樂播放中</button>
+    <div id="close-ui" style="text-align:center; color:#22ff88; margin-top:15px; cursor:pointer; font-size:12px; display:none;">關閉選單</div>
   </div>
 
   <div id="canvas-container"></div>
@@ -224,176 +157,189 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
   <script>
-    // --- UI 交互邏輯 ---
-    const uiToggle = document.getElementById('ui-toggle');
-    const uiPanel = document.getElementById('ui-panel');
-    const closePanel = document.getElementById('close-panel');
-
-    uiToggle.onclick = () => {
-      uiPanel.classList.toggle('open');
-      uiToggle.style.display = uiPanel.classList.contains('open') ? 'none' : 'flex';
-    };
-    closePanel.onclick = () => {
-      uiPanel.classList.remove('open');
-      uiToggle.style.display = 'flex';
-    };
-
-    // --- Three.js 初始化 ---
+    // --- 基礎初始化 ---
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000, 30, 100);
-
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    scene.fog = new THREE.Fog(0x000000, 35, 120);
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1500);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-    camera.position.set(0, 5, 55);
+    camera.position.set(0, 3, 52);
 
     const group = new THREE.Group();
     scene.add(group);
-
-    // 光源
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const pLight = new THREE.PointLight(0xffffff, 1);
-    pLight.position.set(0, 20, 20);
-    scene.add(pLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    keyLight.position.set(30, 40, 25);
+    scene.add(keyLight);
 
     const isMobile = window.innerWidth < 600;
 
-    // --- 聖誕樹粒子 ---
-    const particleCount = isMobile ? 6000 : 12000;
-    const geo = new THREE.BufferGeometry();
-    const pos = new Float32Array(particleCount * 3);
+    // --- 【視覺還原】樹體粒子 ---
+    const particleCount = isMobile ? 8000 : 14000;
+    const treeGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
-    const base = new Float32Array(particleCount * 3);
-    const expo = new Float32Array(particleCount * 3);
+    const baseTargets = new Float32Array(particleCount * 3);
+    const explodedTargets = new Float32Array(particleCount * 3);
 
-    const treeH = 35;
-    const gradFrom = new THREE.Color(0x22ff88);
-    const gradTo = new THREE.Color(0xffd700);
+    const H = 36, yMin = -H * 0.55, yMax = H * 0.45, maxR = 15.5;
+    function radiusAtY(y) { const t = (y - yMin) / (yMax - yMin); return maxR * (1 - t) * 0.98 + 0.7; }
 
-    for(let i=0; i<particleCount; i++){
+    const gradFrom = new THREE.Color(0x22ff88), gradTo = new THREE.Color(0xffd700);
+
+    for (let i = 0; i < particleCount; i++) {
       const idx = i * 3;
-      const t = Math.random();
-      const y = (t - 0.5) * treeH;
-      const r = (1 - t) * 15 + 0.5;
-      const angle = t * Math.PI * 18 + Math.random() * 0.5;
+      const y = yMin + Math.random() * (yMax - yMin);
+      const r = radiusAtY(y);
+      const t = (y - yMin) / (yMax - yMin);
+      const angle = (t * Math.PI * 2 * 10) * 1.15 + (Math.random()-0.5)*0.9;
+      const x = Math.cos(angle) * (r + (Math.random()-0.5)*1.6);
+      const z = Math.sin(angle) * (r + (Math.random()-0.5)*1.6);
 
-      const x = Math.cos(angle) * r;
-      const z = Math.sin(angle) * r;
-
-      base[idx] = x; base[idx+1] = y; base[idx+2] = z;
-      pos[idx] = (Math.random()-0.5)*100; pos[idx+1] = (Math.random()-0.5)*100; pos[idx+2] = (Math.random()-0.5)*100;
-
-      const dir = new THREE.Vector3(x, y*0.2, z).normalize();
-      expo[idx] = x + dir.x * 40; expo[idx+1] = y + dir.y * 40; expo[idx+2] = z + dir.z * 40;
+      baseTargets[idx] = x; baseTargets[idx+1] = y; baseTargets[idx+2] = z;
+      const dir = new THREE.Vector3(x, y * 0.18, z).normalize();
+      const str = 34 + Math.random() * 22;
+      explodedTargets[idx] = x + dir.x * str; explodedTargets[idx+1] = y + dir.y * str; explodedTargets[idx+2] = z + dir.z * str;
 
       const c = gradFrom.clone().lerp(gradTo, t);
       colors[idx] = c.r; colors[idx+1] = c.g; colors[idx+2] = c.b;
+      positions[idx] = (Math.random()-0.5)*140; positions[idx+1] = (Math.random()-0.5)*140; positions[idx+2] = (Math.random()-0.5)*140;
     }
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    treeGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    treeGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const treeMaterial = new THREE.PointsMaterial({ size: isMobile ? 0.28 : 0.2, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, vertexColors: true });
+    const treePoints = new THREE.Points(treeGeometry, treeMaterial);
+    group.add(treePoints);
 
-    const mat = new THREE.PointsMaterial({ size: isMobile?0.3:0.2, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8 });
-    const points = new THREE.Points(geo, mat);
-    group.add(points);
+    // --- 【視覺還原】絲帶 Ribbon ---
+    const ribbonGroup = new THREE.Group();
+    group.add(ribbonGroup);
+    function buildRibbon() {
+      const curvePts = [];
+      for (let i = 0; i <= 200; i++) {
+        const tt = i / 200;
+        const y = yMin + (yMax - yMin) * tt;
+        const r = radiusAtY(y) * 0.92;
+        const a = tt * Math.PI * 2 * 7.2;
+        curvePts.push(new THREE.Vector3(Math.cos(a)*r, y, Math.sin(a)*r));
+      }
+      const curve = new THREE.CatmullRomCurve3(curvePts);
+      const tube = new THREE.TubeGeometry(curve, 200, 0.15, 8, false);
+      const matR = new THREE.MeshStandardMaterial({ color: 0xff4d4d, metalness: 0.5, roughness: 0.3 });
+      ribbonGroup.add(new THREE.Mesh(tube, matR));
+    }
+    buildRibbon();
+
+    // --- 【視覺還原】星星 Star ---
+    function makeStar() {
+      const s = new THREE.Shape();
+      for(let i=0; i<10; i++){
+        const r = i%2==0 ? 2 : 0.8;
+        const a = (i/10)*Math.PI*2 - Math.PI/2;
+        if(i==0) s.moveTo(Math.cos(a)*r, Math.sin(a)*r); else s.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+      }
+      const starGeo = new THREE.ExtrudeGeometry(s, {depth:0.5, bevelEnabled:true, bevelSize:0.1});
+      const starMesh = new THREE.Mesh(starGeo, new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffd700, emissiveIntensity:0.8}));
+      starMesh.position.y = yMax + 3; starMesh.scale.set(0.6,0.6,0.6);
+      
+      const canvas = document.createElement('canvas'); canvas.width=64; canvas.height=64;
+      const ctx = canvas.getContext('2d');
+      const g = ctx.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,215,0,1)'); g.addColorStop(1,'rgba(255,215,0,0)');
+      ctx.fillStyle=g; ctx.fillRect(0,0,64,64);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas), blending:THREE.AdditiveBlending}));
+      halo.position.y = yMax + 3; halo.scale.set(10,10,1);
+      return {starMesh, halo};
+    }
+    const starPack = makeStar();
+    group.add(starPack.starMesh); group.add(starPack.halo);
+
+    // --- 【視覺還原】裝飾品 ---
+    const ornaments = new THREE.InstancedMesh(new THREE.SphereGeometry(0.35,8,8), new THREE.MeshStandardMaterial({color:0xff4d4d}), 30);
+    const dummy = new THREE.Object3D();
+    for(let i=0; i<30; i++){
+      const y = yMin + Math.random()*(yMax-yMin); const r = radiusAtY(y)*0.9; const a = Math.random()*Math.PI*2;
+      dummy.position.set(Math.cos(a)*r, y, Math.sin(a)*r); dummy.updateMatrix(); ornaments.setMatrixAt(i, dummy.matrix);
+    }
+    group.add(ornaments);
 
     // --- 雪花 ---
+    const snowCount = isMobile ? 600 : 1200;
     const snowGeo = new THREE.BufferGeometry();
-    const snowPos = new Float32Array(isMobile?500:1000 * 3);
-    for(let i=0; i<snowPos.length; i++) snowPos[i] = (Math.random()-0.5)*150;
+    const snowPos = new Float32Array(snowCount * 3);
+    for(let i=0; i<snowCount*3; i++) snowPos[i] = (Math.random()-0.5)*140;
     snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-    const snowMat = new THREE.PointsMaterial({ size: 0.3, color: 0xffffff, transparent: true, opacity: 0.6 });
-    const snow = new THREE.Points(snowGeo, snowMat);
+    const snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({color:0xffffff, size:0.3, transparent:true, opacity:0.6}));
     scene.add(snow);
 
-    // --- 手勢處理 ---
-    let explode = 0;
-    let targetExplode = 0;
-    const videoElement = document.getElementById('video-preview');
+    // --- 手勢與動畫邏輯 ---
+    let explodeFactor = 0, targetExplode = 0;
+    let filteredY = 0.5;
 
-    function onResults(results) {
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const hand = results.multiHandLandmarks[0];
-        // 爆炸判斷 (大拇指與小拇指距離)
-        const d = Math.hypot(hand[4].x - hand[20].x, hand[4].y - hand[20].y);
-        targetExplode = THREE.MathUtils.mapLinear(d, 0.3, 0.6, 0, 1);
-        targetExplode = Math.max(0, Math.min(1, targetExplode));
-
-        // 左右移動
-        const tx = (0.5 - hand[0].x) * 60;
-        group.position.x += (tx - group.position.x) * 0.1;
-        
-        // 旋轉
-        group.rotation.y += 0.01;
+    const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+    hands.setOptions({ maxNumHands: 1, modelComplexity: isMobile ? 0 : 1, minDetectionConfidence: 0.5 });
+    hands.onResults((res) => {
+      if(res.multiHandLandmarks && res.multiHandLandmarks[0]) {
+        const h = res.multiHandLandmarks[0];
+        // 爆炸
+        const d = Math.hypot(h[4].x-h[20].x, h[4].y-h[20].y);
+        targetExplode = Math.max(0, Math.min(1, (d - 0.35) / 0.2));
+        // 位移與旋轉
+        group.position.x += ((0.5 - h[0].x)*40 - group.position.x)*0.1;
+        filteredY += (h[9].y - filteredY)*0.1;
+        group.rotation.y = (filteredY - 0.5)*Math.PI*2;
       } else {
         targetExplode = 0;
       }
-    }
+    });
 
-    const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-    hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.5 });
-    hands.onResults(onResults);
-
-    // --- 動畫循環 ---
     function animate() {
       requestAnimationFrame(animate);
-      explode += (targetExplode - explode) * 0.1;
+      explodeFactor += (targetExplode - explodeFactor) * 0.08;
       
-      const p = geo.attributes.position.array;
+      const posArr = treeGeometry.attributes.position.array;
       for(let i=0; i<particleCount; i++){
         const idx = i*3;
-        p[idx] += ( (base[idx] + (expo[idx]-base[idx])*explode) - p[idx] ) * 0.1;
-        p[idx+1] += ( (base[idx+1] + (expo[idx+1]-base[idx+1])*explode) - p[idx+1] ) * 0.1;
-        p[idx+2] += ( (base[idx+2] + (expo[idx+2]-base[idx+2])*explode) - p[idx+2] ) * 0.1;
+        const tx = baseTargets[idx] + (explodedTargets[idx]-baseTargets[idx])*explodeFactor;
+        const ty = baseTargets[idx+1] + (explodedTargets[idx+1]-baseTargets[idx+1])*explodeFactor;
+        const tz = baseTargets[idx+2] + (explodedTargets[idx+2]-baseTargets[idx+2])*explodeFactor;
+        posArr[idx] += (tx - posArr[idx])*0.1; posArr[idx+1] += (ty - posArr[idx+1])*0.1; posArr[idx+2] += (tz - posArr[idx+2])*0.1;
       }
-      geo.attributes.position.needsUpdate = true;
+      treeGeometry.attributes.position.needsUpdate = true;
 
-      // 驚喜卡片顯示
-      if(explode > 0.8) document.getElementById('reveal-card').classList.add('show');
-      else if(explode < 0.3) document.getElementById('reveal-card').classList.remove('show');
+      // 驚喜卡片
+      const card = document.getElementById('reveal-card');
+      if(explodeFactor > 0.7) card.classList.add('show'); else if(explodeFactor < 0.3) card.classList.remove('show');
 
-      snow.position.y -= 0.05;
-      if(snow.position.y < -50) snow.position.y = 50;
-
+      starPack.starMesh.rotation.y += 0.02;
+      snow.position.y -= 0.1; if(snow.position.y < -40) snow.position.y = 40;
       renderer.render(scene, camera);
     }
 
-    // --- 事件綁定 ---
+    // --- UI 控制 ---
+    const toggle = document.getElementById('ui-toggle');
+    const panel = document.getElementById('ui-panel');
+    const closeBtn = document.getElementById('close-ui');
+
+    toggle.onclick = () => { panel.classList.toggle('show'); closeBtn.style.display = panel.classList.contains('show') ? 'block' : 'none'; };
+    closeBtn.onclick = () => { panel.classList.remove('show'); closeBtn.style.display = 'none'; };
+
     document.getElementById('start-btn').onclick = () => {
-      document.getElementById('status').style.display = 'none';
-      const bgm = document.getElementById('bgm');
-      bgm.play().catch(()=>{});
-      
-      const cameraSetup = new Camera(videoElement, {
-        onFrame: async () => { await hands.send({image: videoElement}); },
+      document.getElementById('status').style.display='none';
+      const bgm = document.getElementById('bgm'); bgm.play().catch(()=>{});
+      const cam = new Camera(document.getElementById('video-preview'), {
+        onFrame: async () => { await hands.send({image: document.getElementById('video-preview')}); },
         width: 320, height: 240
       });
-      cameraSetup.start();
+      cam.start();
       animate();
     };
 
-    // 顏色切換
-    document.querySelectorAll('.cbtn').forEach(b => {
-      b.onclick = () => {
-        mat.vertexColors = false;
-        mat.color.set(b.dataset.c);
-        document.getElementById('gradSwitch').classList.remove('on');
-      };
-    });
-
-    document.getElementById('gradSwitch').onclick = function() {
-      this.classList.toggle('on');
-      mat.vertexColors = this.classList.contains('on');
-      mat.needsUpdate = true;
-    };
-
-    window.onresize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-    };
+    });
   </script>
 </body>
 </html>
