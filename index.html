@@ -1,12 +1,14 @@
-<html lang="zh-TW"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>叁學院｜AI 聖誕樹互動（完整版）</title>
 
   <!-- ✅ Google Fonts: Corinthia -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&amp;display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
     body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
@@ -206,16 +208,16 @@
   <div id="status">
     <h1>🎄 AI 聖誕樹互動（完整版）</h1>
     <p>
-      ✅ 張開手：樹炸開（越張越爆）<br>
-      👋 揮手：樹向左/右位移<br>
-      🔄 手掌上下：360 旋轉<br>
-      👌 捏合：魔法光點<br>
+      ✅ 張開手：樹炸開（越張越爆）<br/>
+      👋 揮手：樹向左/右位移<br/>
+      🔄 手掌上下：360 旋轉<br/>
+      👌 捏合：魔法光點<br/>
       ❄️ 背景飄雪：自動
     </p>
     <button id="start-btn">✨ 開始體驗</button>
   </div>
 
-  <video id="video-preview" playsinline=""></video>
+  <video id="video-preview" playsinline></video>
 
   <!-- ✅ 你要的巨大標題 -->
   <div id="big-title">Merry Christmas</div>
@@ -228,12 +230,12 @@
 
   <!-- 爆炸解鎖圖片 -->
   <div id="reveal-card">
-    <img id="reveal-img" src="./my_xmas_photo.jpg" alt="Surprise">
-    <div class="reveal-text">給你一個不無聊的聖誕驚喜 ✨<br>（張開手 → 解鎖）</div>
+    <img id="reveal-img" src="./my_xmas_photo.jpg" alt="Surprise" />
+    <div class="reveal-text">給你一個不無聊的聖誕驚喜 ✨<br/>（張開手 → 解鎖）</div>
   </div>
 
   <!-- 背景音樂 -->
-  <audio id="bgm" src="./xmas_song.mp3" loop="" preload="auto"></audio>
+  <audio id="bgm" src="./xmas_song.mp3" loop preload="auto"></audio>
 
   <div id="ui-panel">
     <h2>✨ 聖誕樹控制台</h2>
@@ -257,14 +259,14 @@
 
     <div class="divider"></div>
     <div class="help">
-      👋 揮手：左右位移（離散步進＋慣性）<br>
-      🔄 上下移動手掌：360 旋轉<br>
-      🖐 張開手：爆炸特效（越張越爆）<br>
+      👋 揮手：左右位移（離散步進＋慣性）<br/>
+      🔄 上下移動手掌：360 旋轉<br/>
+      🖐 張開手：爆炸特效（越張越爆）<br/>
       👌 捏合：魔法光點
     </div>
   </div>
 
-  <div id="canvas-container"><canvas width="1217" height="915" style="display: block; width: 974px; height: 732px;"></canvas></div>
+  <div id="canvas-container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -770,6 +772,5 @@
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
   </script>
-
-
-</body></html>
+</body>
+</html>
