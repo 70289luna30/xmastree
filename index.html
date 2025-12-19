@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>叁學院：AI 聖誕樹 (穩定修復版)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        #xmas-text {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            color: #fff; font-family: 'Corinthia', cursive; font-size: 15vw; z-index: 5;
+            text-shadow: 0 0 20px #ff4d4d; pointer-events: none; text-align: center; width: 100%; transition: 0.3s;
+        }
+        @media (min-width: 768px) { #xmas-text { font-size: 110px; } }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100; color: white;
+        }
+        #start-btn { padding: 15px 40px; font-size: 20px; background: #22ff88; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 0 25px rgba(34, 255, 136, 0.5); }
+
+        /* UI 面板 */
+        .ui-panel {
+            position: absolute; top: 20px; left: 20px; z-index: 20;
+            background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
+            display: none; /* 預設隱藏，啟動後才顯示 */
+        }
+        .color-btn {
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+            margin-right: 5px; cursor: pointer; display: inline-block;
+        }
+
+        #guide-text {
+            position: absolute; bottom: 150px; width: 100%; text-align: center;
+            color: rgba(255,255,255,0.7); font-size: 14px; z-index: 10; pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        #photo-popup { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); 
+            width: 80vw; max-width: 350px; border: 8px solid #fff; border-radius: 15px; 
+            z-index: 50; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; opacity: 0;
+        }
+        #photo-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+        #video-preview { position: absolute; bottom: 10px; right: 10px; width: 100px; border-radius: 8px; transform: scaleX(-1); border: 2px solid rgba(255,255,255,0.3); z-index: 10; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h2 style="font-family: 'Corinthia'; font-size: 50px;">San Xue Yuan</h2>
+        <button id="start-btn">✨ 啟動全能魔法</button>
+        <p style="margin-top:20px; font-size:12px; color:#888;">請允許攝影機權限</p>
+    </div>
+
+    <div id="color-panel" class="ui-panel">
+        <div class="color-btn" style="background:#22ff88" onclick="changeColor('#22ff88')"></div>
+        <div class="color-btn" style="background:#ff4d4d" onclick="changeColor('#ff4d4d')"></div>
+        <div class="color-btn" style="background:#ffd700" onclick="changeColor('#ffd700')"></div>
+        <div class="color-btn" style="background:#00d2ff" onclick="changeColor('#00d2ff')"></div>
+    </div>
+
+    <div id="xmas-text">Merry Christmas</div>
+    <div id="guide-text">🖐️ 張開手：炸開 | ↔️ 左右移：360° 旋轉</div>
+
+    <video id="video-preview" playsinline></video>
+    
+    <img id="photo-popup" src="https://images.unsplash.com/photo-1543589077-47d81606c1bf?w=500" alt="Memory">
+    <audio id="bg_music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" loop></audio>
+    
+    <div id="canvas-container"></div>
+
+    <script>
+        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+        const particleCount = isMobile ? 3500 : 12000;
+        
+        let scene, camera, renderer, points, geometry;
+        let handScale = 0.2; 
+        let targetX = 0;     
+        let targetRotY = 0;  
+        
+        const targets = new Float32Array(particleCount * 3);
+        const currentPos = new Float32Array(particleCount * 3);
+
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            camera.position.z = 55;
+
+            geometry = new THREE.BufferGeometry();
+            for (let i = 0; i < particleCount * 3; i++) currentPos[i] = (Math.random() - 0.5) * 150;
+            geometry.setAttribute('position', new THREE.BufferAttribute(currentPos, 3));
+            
+            for (let i = 0; i < particleCount; i++) {
+                const idx = i * 3;
+                const h = Math.random() * 45; const r = (45 - h) * 0.45; const a = h * 0.8 + (i % 4) * (Math.PI/2);
+                targets[idx] = Math.cos(a) * r; targets[idx+1] = h - 22; targets[idx+2] = Math.sin(a) * r;
+            }
+
+            const mat = new THREE.PointsMaterial({ color: 0x22ff88, size: isMobile ? 0.4 : 0.25, transparent: true, blending: THREE.AdditiveBlending });
+            points = new THREE.Points(geometry, mat);
+            scene.add(points);
+            animate();
+        }
+
+        // 2. 防呆修正：確保 points 存在才執行，避免報錯
+        function changeColor(hex) {
+            if(points && points.material) {
+                points.material.color.set(hex);
+            }
+        }
+
+        async function startAI() {
+            const video = document.getElementById('video-preview');
+            const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+            hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.5 });
+            
+            hands.onResults((results) => {
+                const photo = document.getElementById('photo-popup');
+                const text = document.getElementById('xmas-text');
+
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const lm = results.multiHandLandmarks[0];
+                    
+                    // 核心手勢邏輯
+                    const openDist = Math.sqrt(Math.pow(lm[4].x - lm[20].x, 2) + Math.pow(lm[4].y - lm[20].y, 2));
+                    
+                    // 炸開倍率
+                    const targetScaleRaw = 0.5 + (openDist * 4.5);
+                    handScale += (targetScaleRaw - handScale) * 0.1;
+
+                    if (openDist > 0.35) {
+                        photo.classList.add('show');
+                        text.style.opacity = 1;
+                        document.getElementById('guide-text').style.opacity = 0;
+                    } else {
+                        photo.classList.remove('show');
+                        text.style.opacity = 0.3;
+                    }
+
+                    // 左右移動與旋轉
+                    const rawX = 1 - lm[9].x; 
+                    targetX = (rawX - 0.5) * 40; 
+                    targetRotY = (rawX - 0.5) * Math.PI * 2;
+
+                    if(points) {
+                        points.position.x += (targetX - points.position.x) * 0.1;
+                        points.rotation.y += (targetRotY - points.rotation.y) * 0.1;
+                    }
+
+                } else {
+                    handScale += (0.2 - handScale) * 0.05;
+                    photo.classList.remove('show');
+                    if(points) {
+                        points.rotation.y += 0.005; 
+                        points.position.x += (0 - points.position.x) * 0.05;
+                    }
+                }
+            });
+
+            // 3. 錯誤捕捉：如果攝影機無法啟動，跳出提示
+            const cam = new Camera(video, {
+                onFrame: async () => { await hands.send({image: video}); },
+                width: 320, height: 240
+            });
+            
+            cam.start().catch(err => {
+                alert("攝影機啟動失敗！請確認：\n1. 網址開頭是 https\n2. 已允許攝影機權限");
+                console.error(err);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(!points) return; // 保護機制
+
+            const pos = geometry.attributes.position.array;
+            for (let i = 0; i < particleCount * 3; i++) {
+                const target = targets[i] * handScale;
+                pos[i] += (target - pos[i]) * 0.1;
+            }
+            geometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            // 啟動後才顯示顏色面板，避免提前點擊報錯
+            document.getElementById('color-panel').style.display = 'block';
+            
+            // 播放音樂並捕捉錯誤
+            document.getElementById('bg_music').play().catch(e => console.log("音樂自動播放受阻"));
+            
+            initThree();
+            startAI();
+        });
+
+        window.addEventListener('resize', () => {
+            if(camera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+    </script>
+</body>
+</html>
